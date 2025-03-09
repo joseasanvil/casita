@@ -7,7 +7,7 @@ const int bulbPin = 9;          // Output pin for the bulb (or relay)
 
 int onOffState = 1;             // Variable to store switch state
 int bulbState = 0;              // Bulb state
-int numStates = 2;              // Number of states
+int numStates = 4;              // Number of states
 
 int stateSwitch = 0;
 int onOffSwitch = 0;
@@ -22,16 +22,20 @@ void setup() {
     Serial.begin(9600);
 }
 
+void setIntensityLED(int intensity){
+  analogWrite(bulbPin, intensity*onOffState);
+}
+
 void increaseLED() {
   for(int i = 0; i <= 255; i++){
-    analogWrite(bulbPin, i*onOffState);
+    setIntensityLED(i);
     delay(10);
   }
 }
 
 void decreaseLED(){
   for(int i = 255; i >= 0; i--){
-    analogWrite(bulbPin, i*onOffState);
+    setIntensityLED(i);
     delay(10);
   }
 }
@@ -52,14 +56,50 @@ void switchOnOffState(int onOffSwitch){
   delay(1000);
 }
 
+void state1(){
+  lightOn();
+}
+
+void state2(){
+  increaseLED();
+  decreaseLED();
+}
+
+void state3(){
+  lightOn();
+  delay(500);
+  lightOff();
+  delay(500);
+}
+
+void state4(){
+  int intensity = random(0, 255);
+  int waitTime = random(10, 1000);
+  setIntensityLED(intensity);
+  delay(waitTime);
+}
+
 void setBulbState(int bulbState){
   if (bulbState == 0){
-    analogWrite(bulbPin, 255*onOffState);
+    state1();
   }
   if (bulbState == 1){
-    increaseLED();
-    decreaseLED();
+    state2();
   }
+  if (bulbState == 2){
+    state3();
+  }
+  if (bulbState == 3){
+    state4();
+  }
+}
+
+void lightOn(){
+  analogWrite(bulbPin, 255*onOffState);
+}
+
+void lightOff(){
+  analogWrite(bulbPin, 0*onOffState);
 }
 
 void switchBulbState(int stateSwitch){
@@ -76,20 +116,28 @@ void switchBulbState(int stateSwitch){
         EEPROM.write(EEPROM_ADDR, bulbState);
     }
     if (bulbState == 0){
-      analogWrite(bulbPin, 255*onOffState);
+      state1();
     }
     delay(1000);
-  }
-
-  if (bulbState == 1){
-    increaseLED();
-    decreaseLED();
   }
 }
 
 void loop() {
     stateSwitch = digitalRead(stateSwitchPin); // Read the switch state
     onOffSwitch = digitalRead(onOffSwitchPin); // Read the switch state
-    switchBulbState(stateSwitch);
-    switchOnOffState(onOffSwitch);
+    if (stateSwitch == LOW) {
+      switchBulbState(stateSwitch);
+    }
+    if (onOffSwitch == LOW) {
+      switchOnOffState(onOffSwitch);
+    }
+    if (bulbState == 1){
+      state2();
+    }
+    if (bulbState == 2){
+      state3();
+    }
+    if (bulbState == 3){
+      state4();
+    }
 }
